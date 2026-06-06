@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daily Market Brief | Dashboard</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3B82F6',
+                        success: '#10B981',
+                        danger: '#EF4444',
+                        warning: '#F59E0B',
+                        dark: {
+                            bg: '#0F172A',
+                            card: '#1E293B',
+                            border: '#334155'
+                        },
+                        light: {
+                            bg: '#F8FAFC',
+                            card: '#FFFFFF',
+                            border: '#E2E8F0'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace']
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            transition: background-color 0.3s, color 0.3s;
+        }
+        
+        .tabular-nums {
+            font-variant-numeric: tabular-nums;
+        }
+        
+        .animate-pulse-slow {
+            animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .price-up {
+            color: #10B981;
+        }
+        
+        .price-down {
+            color: #EF4444;
+        }
+        
+        .card-hover {
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .card-hover:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+        
+        .dark .card-hover:hover {
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+        }
+        
+        .sparkline {
+            stroke-width: 2;
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+        
+        .trend-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 2px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+        
+        .news-item {
+            transition: background-color 0.2s;
+        }
+        
+        .news-item:hover {
+            background-color: rgba(59, 130, 246, 0.1);
+        }
+        
+        .dark .news-item:hover {
+            background-color: rgba(59, 130, 246, 0.15);
+        }
+        
+        .scrollbar-thin::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        
+        .scrollbar-thin::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        
+        .scrollbar-thin::-webkit-scrollbar-thumb {
+            background: #94A3B8;
+            border-radius: 3px;
+        }
+        
+        .dark .scrollbar-thin::-webkit-scrollbar-thumb {
+            background: #475569;
+        }
+        
+        .market-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 12px;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+        
+        .market-open {
+            background-color: rgba(16, 185, 129, 0.15);
+            color: #10B981;
+        }
+        
+        .market-closed {
+            background-color: rgba(148, 163, 184, 0.15);
+            color: #94A3B8;
+        }
+        
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+        
+        .status-open {
+            background-color: #10B981;
+        }
+        
+        .status-closed {
+            background-color: #94A3B8;
+        }
+        
+        .gradient-up {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(16, 185, 129, 0.05));
+        }
+        
+        .gradient-down {
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(239, 68, 68, 0.05));
+        }
+        
+        .header-glow {
+            box-shadow: 0 4px 30px rgba(59, 130, 246, 0.1);
+        }
+        
+        .dark .header-glow {
+            box-shadow: 0 4px 30px rgba(59, 130, 246, 0.2);
+        }
+    </style>
+</head>
+<body class="bg-light-bg dark:bg-dark-bg text-gray-900 dark:text-gray-100 min-h-screen">
+    <!-- Header -->
+    <header class="sticky top-0 z-50 bg-light-card/95 dark:bg-dark-card/95 backdrop-blur-sm border-b border-light-border dark:border-dark-border header-glow">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-blue-600 flex items-center justify-center">
+                        <i class="ri-line-chart-line text-white text-xl"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-lg font-bold">Daily Market Brief</h1>
+                        <p class="text-xs text-gray-500 dark:text-gray-400" id="current-date"></p>
+                    </div>
+                </div>
+                
+                <div class="flex items-center gap-4">
+                    <div class="hidden md:flex items-center gap-2">
+                        <span class="market-status market-open" id="market-status">
+                            <span class="status-dot status-open"></span>
+                            <span>Market Open</span>
+                        </span>
+                    </div>
+                    
+                    <button id="theme-toggle" class="p-2 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
+                        <i class="ri-moon-line dark:hidden text-lg"></i>
+                        <i class="ri-sun-line hidden dark:block text-lg"></i>
+                    </button>
+                    
+                    <button class="p-2 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
+                        <i class="ri-settings-3-line text-lg"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <!-- Quick Stats Bar -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <div class="bg-light-card dark:bg-dark-card rounded-xl p-4 border border-light-border dark:border-dark-border card-hover">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-sm text-gray-500 dark:text-gray-400">S&P 500</span>
+                    <span class="trend-indicator price-up">
+                        <i class="ri-arrow-up-line"></i>
+                        <span id="sp500-change">+0.45%</span>
+                    </span>
+                </div>
+                <div class="text-2xl font-bold font-mono tabular-nums" id="sp500-price">4,587.64</div>
+                <svg class="w-full h-8 mt-2" viewBox="0 0 100 30">
+                    <polyline class="sparkline price-up" points="0,25 15,20 30,22 45,15 60,18 75,10 90,8 100,5"/>
+                </svg>
+            </div>
+            
+            <div class="bg-light-card dark:bg-dark-card rounded-xl p-4 border border-light-border dark:border-dark-border card-hover">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-sm text-gray-500 dark:text-gray-400">Dow Jones</span>
+                    <span class="trend-indicator price-up">
+                        <i class="ri-arrow-up-line"></i>
+                        <span id="dow-change">+0.32%</span>
+                    </span>
+                </div>
+                <div class="text-2xl font-bold font-mono tabular-nums" id="dow-price">35,678.90</div>
+                <svg class="w-full h-8 mt-2" viewBox="0 0 100 30">
+                    <polyline class="sparkline price-up" points="0,22 15,18 30,20 45,16 60,14 75,12 90,8 100,6"/>
+                </svg>
+            </div>
+            
+            <div class="bg-light-card dark:bg-dark-card rounded-xl p-4 border border-light-border dark:border-dark-border card-hover">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-sm text-gray-500 dark:text-gray-400">NASDAQ</span>
+                    <span class="trend-indicator price-down">
+                        <i class="ri-arrow-down-line"></i>
+                        <span id="nasdaq-change">-0.18%</span>
+                    </span>
+                </div>
+                <div class="text-2xl font-bold font-mono tabular-nums" id="nasdaq-price">14,352.41</div>
+                <svg class="w-full h-8 mt-2" viewBox="0 0 100 30">
+                    <polyline class="sparkline price-down" points="0,8 15,12 30,10 45,15 60,18 75,14 90,16 100,20"/>
+                </svg>
+            </div>
+            
+            <div class="bg-light-card dark:bg-dark-card rounded-xl p-4 border border-light-border dark:border-dark-border card-hover">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-sm text-gray-500 dark:text-gray-400">VIX</span>
+                    <span class="trend-indicator price-down">
+                        <i class="ri-arrow-down-line"></i>
+                        <span id="vix-change">-2.15%</span>
+                    </span>
+                </div>
+                <div class="text-2xl font-bold font-mono tabular-nums" id="vix-price">13.45</div>
+                <svg class="w-full h-8 mt-2" viewBox="0 0 100 30">
+                    <polyline class="sparkline price-down" points="0,10 15,15 30,18 45,20 60,22 75,18 90,20 100,24"/>
+                </svg>
+            </div>
+        </div>
+
+        <!-- Main Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Left Column - Market Movers -->
+            <div class="lg:col-span-2 space-y-6">
+                <!-- Top Gainers -->
+                <div class="bg-light-card dark:bg-dark-card rounded-xl border border-light-border dark:border-dark-border overflow-hidden">
+                    <div class="p-4 border-b border-light-border dark:border-dark-border flex items-center justify-between">
+                        <h2 class="font-semibold flex items-center gap-2">
+                            <i class="ri-arrow-up-circle-line text-success"></i>
+                            Top Gainers
+                        </h2>
+                        <span class="text-xs text-gray-500 dark:text-gray-400">Today</span>
+                    </div>
+                    <div class="divide-y divide-light-border dark:divide-dark-border" id="gainers-list">
+                        <!-- Populated by JavaScript -->
+                    </div>
+                </div>
+
+                <!-- Top Losers -->
+                <div class="bg-light-card dark:bg-dark-card rounded-xl border border-light-border dark:border-dark-border overflow-hidden">
+                    <div class="p-4 border-b border-light-border dark:border-dark-border flex items-center justify-between">
+                        <h2 class="font-semibold flex items-center gap-2">
+                            <i class="ri-arrow-down-circle-line text-danger"></i>
+                            Top Losers
+                        </h2>
+                        <span class="text-xs text-gray-500 dark:text-gray-400">Today</span>
+                    </div>
+                    <div class="divide-y divide-light-border dark:divide-dark-border" id="losers-list">
+                        <!-- Populated by JavaScript -->
+                    </div>
+                </div>
+
+                <!-- Most Active -->
+                <div class="bg-light-card dark:bg-dark-card rounded-xl border border-light-border dark:border-dark-border overflow-hidden">
+                    <div class="p-4 border-b border-light-border dark:border-dark-border flex items-center justify-between">
+                        <h2 class="font-semibold flex items-center gap-2">
+                            <i class="ri-bar-chart-box-line text-primary"></i>
+                            Most Active
+                        </h2>
+                        <span class="text-xs text-gray-500 dark:text-gray-400">By Volume</span>
+                    </div>
+                    <div class="divide-y divide-light-border dark:divide-dark-border" id="active-list">
+                        <!-- Populated by JavaScript -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column -->
+            <div class="space-y-6">
+                <!-- Commodities -->
+                <div class="bg-light-card dark:bg-dark-card rounded-xl border border-light-border dark:border-dark-border p-4">
+                    <h2 class="font-semibold mb-4 flex items-center gap-2">
+                        <i class="ri-coins-line text-warning"></i>
+                        Commodities
+                    </h2>
+                    <div class="space-y-3" id="commodities-list">
+                        <!-- Populated by JavaScript -->
+                    </div>
+                </div>
+
+                <!-- Cryptocurrencies -->
+                <div class="bg-light-card dark:bg-dark-card rounded-xl border border-light-border dark:border-dark-border p-4">
+                    <h2 class="font-semibold mb-4 flex items-center gap-2">
+                        <i class="ri-bit-coin-line text-warning"></i>
+                        Cryptocurrencies
+                    </h2>
+                    <div class="space-y-3" id="crypto-list">
+                        <!-- Populated by JavaScript -->
+                    </div>
+                </div>
+
+                <!-- Treasury Yields -->
+                <div class="bg-light-card dark:bg-dark-card rounded-xl border border-light-border dark:border-dark-border p-4">
+                    <h2 class="font-semibold mb-4 flex items-center gap-2">
+                        <i class="ri-government-line text-primary"></i>
+                        Treasury Yields
+                    </h2>
+                    <div class="space-y-3" id="treasury-list">
+                        <!-- Populated by JavaScript -->
+                    </div>
+                </div>
+
+                <!-- Economic Calendar -->
+                <div class="bg-light-card dark:bg-dark-card rounded-xl border border-light-border dark:border-dark-border p-4">
+                    <h2 class="font-semibold mb-4 flex items-center gap-2">
+                        <i class="ri-calendar-event-line text-success"></i>
+                        Economic Calendar
+                    </h2>
+                    <div class="space-y-3" id="economic-calendar">
+                        <!-- Populated by JavaScript -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Market News -->
+        <div class="mt-6 bg-light-card dark:bg-dark-card rounded-xl border border-light-border dark:border-dark-border overflow-hidden">
+            <div class="p-4 border-b border-light-border dark:border-dark-border flex items-center justify-between">
+                <h2 class="font-semibold flex items-center gap-2">
+                    <i class="ri-newspaper-line text-primary"></i>
+                    Market News
+                </h2>
+                <a href="#" class="text-sm text-primary hover:underline">View All</a>
+            </div>
+            <div class="divide-y divide-light-border dark:divide-dark-border" id="news-list">
+                <!-- Populated by JavaScript -->
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="mt-8 border-t border-light-border dark:border-dark-border bg-light-card dark:bg-dark-card">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <div class="flex flex-col md:flex-row items-center justify-between gap-4">
+                <div class="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+                    <i class="ri-time-line"></i>
+                    <span>Last updated: <span id="last-update"></span></span>
+                </div>
+                <div class="text-sm text-gray-500 dark:text-gray-400">
+                    Data delayed by 15 minutes. Not financial advice.
+                </div>
+                <div class="flex items-center gap-4">
+                    <a href="#" class="text-gray-500 dark:text-gray-400 hover:text-primary dark:hover:text-primary transition-colors">
+                        <i class="ri-twitter-line text-lg"></i>
+                    </a>
+                    <a href="#" class="text-gray-500 dark:text-gray-400 hover:text-primary dark:hover:text-primary transition-colors">
+                        <i class="ri-linkedin-line text-lg"></i>
+                    </a>
+                    <a href="#" class="text-gray-500 dark:text-gray-400 hover:text-primary dark:hover:text-primary transition-colors">
+                        <i class="ri-github-line text-lg"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Theme Toggle
+        const themeToggle = document.getElementById('theme-toggle');
+        const html = document.documentElement;
+        
+        // Check for saved theme preference or default to system preference
+        const savedTheme = localStorage.getItem('theme');
+        const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        
+        if (savedTheme === 'dark' || (!savedTheme && systemPrefersDark)) {
+            html.classList.add('dark');
+        }
+        
+        themeToggle.addEventListener('click', () => {
+            html.classList.toggle('dark');
+            localStorage.setItem('theme', html.classList.contains('dark') ? 'dark' : 'light');
+        });
+
+        // Set current date
+        const currentDateEl = document.getElementById('current-date');
+        const now = new Date();
+        const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+        currentDateEl.textContent = now.toLocaleDateString('en-US', options);
+
+        // Set last update time
+        function updateLastUpdated() {
+            const lastUpdateEl = document.getElementById('last-update');
+            lastUpdateEl.textContent = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        }
+        updateLastUpdated();
+
+        // Market Status
+        function updateMarketStatus() {
+            const marketStatusEl = document.getElementById('market-status');
+            const statusDot = marketStatusEl.querySelector('.status-dot');
+            const statusText = marketStatusEl.querySelector('span:last-child');
+            
+            const currentHour = new Date().getHours();
+            const dayOfWeek = new Date().getDay();
+            
+            // Simple check: Market open Mon-Fri, 9:30 AM - 4:00 PM ET
+            const isOpen = dayOfWeek >= 1 && dayOfWeek <= 5 && currentHour >= 9 && currentHour < 16;
+            
+            if (isOpen) {
+                marketStatusEl.className = 'market-status market-open';
+                statusDot.className = 'status-dot status-open';
+                statusText.textContent = 'Market Open';
+            } else {
+                marketStatusEl.className = 'market-status market-closed';
+                statusDot.className = 'status-dot status-closed';
+                statusText.textContent = 'Market Closed';
+            }
+        }
+        updateMarketStatus();
+
+        // Sample Data
+        const gainers = [
+            { symbol: 'NVDA', name: 'NVIDIA Corporation', price: 487.84, change: 12.45, percentChange: 2.62, volume: '45.2M' },
+            { symbol: 'AMD', name: 'Advanced Micro Devices', price: 112.34, change: 5.67, percentChange: 5.32, volume: '38.1M' },
+            { symbol: 'TSLA', name: 'Tesla Inc', price: 248.50, change: 8.90, percentChange: 3.71, volume: '52.8M' },
+            { symbol: 'META', name: 'Meta Platforms Inc', price: 312.45, change: 7.23, percentChange: 2.37, volume: '18.5M' },
+            { symbol: 'AMZN', name: 'Amazon.com Inc', price: 145.67, change: 3.89, percentChange: 2.74, volume: '28.3M' }
+        ];
+
+        const losers = [
+            { symbol: 'NFLX', name: 'Netflix Inc', price: 412.34, change: -15.67, percentChange: -3.66, volume: '12.4M' },
+            { symbol: 'DIS', name: 'Walt Disney Co', price: 89.45, change: -3.21, percentChange: -3.47, volume: '15.2M' },
+            { symbol: 'BA', name: 'Boeing Company', price: 178.90, change: -5.45, percentChange: -2.96, volume: '8.7M' },
+            { symbol: 'PYPL', name: 'PayPal Holdings', price: 58.23, change: -1.89, percentChange: -3.14, volume: '11.3M' },
+            { symbol: 'INTC', name: 'Intel Corporation', price: 32.45, change: -0.98, percentChange: -2.93, volume: '22.1M' }
+        ];
+
+        const mostActive = [
+            { symbol: 'AAPL', name: 'Apple Inc', price: 189.45, change: 1.23, percentChange: 0.65, volume: '89.5M' },
+            { symbol: 'TSLA', name: 'Tesla Inc', price: 248.50, change: 8.90, percentChange: 3.71, volume: '52.8M' },
+            { symbol: 'NVDA', name: 'NVIDIA Corporation', price: 487.84, change: 12.45, percentChange: 2.62, volume: '45.2M' },
+            { symbol: 'AMD', name: 'Advanced Micro Devices', price: 112.34, change: 5.67, percentChange: 5.32, volume: '38.1M' },
+            { symbol: 'AMZN', name: 'Amazon.com Inc', price: 145.67, change: 3.89, percentChange: 2.74, volume: '28.3M' }
+        ];
+
+        const commodities = [
+            { name: 'Gold', symbol: 'GC', price: 1987.50, change: 12.30, percentChange: 0.62 },
+            { name: 'Silver', symbol: 'SI', price: 24.56, change: 0.34, percentChange: 1.40 },
+            { name: 'Crude Oil', symbol: 'CL', price: 78.45, change: -1.23, percentChange: -1.54 },
+            { name: 'Natural Gas', symbol: 'NG', price: 2.89, change: 0.08, percentChange: 2.85 }
+        ];
+
+        const cryptocurrencies = [
+            { name: 'Bitcoin', symbol: 'BTC', price: 43567.89, change: 892.45, percentChange: 2.09 },
+            { name: 'Ethereum', symbol: 'ETH', price: 2345.67, change: 45.23, percentChange: 1.97 },
+            { name: 'Solana', symbol: 'SOL', price: 98.45, change: -3.21, percentChange: -3.16 },
+            { name: 'Ripple', symbol: 'XRP', price: 0.5678, change: 0.0234, percentChange: 4.30 }
+        ];
+
+        const treasuries = [
+            { name: '3-Month', rate: 5.42, change: 0.02 },
+            { name: '2-Year', rate: 4.89, change: 0.05 },
+            { name: '10-Year', rate: 4.23, change: 0.03 },
+            { name: '30-Year', rate: 4.45, change: 0.01 }
+        ];
+
+        const economicEvents = [
+            { time: '08:30 AM', event: 'Initial Jobless Claims', actual: '218K', forecast: '220K', previous: '225K', impact: 'high' },
+            { time: '10:00 AM', event: 'Existing Home Sales', actual: '3.95M', forecast: '4.00M', previous: '3.92M', impact: 'medium' },
+            { time: '02:00 PM', event: 'Fed Balance Sheet', actual: '', forecast: '', previous: '$7.68T', impact: 'low' },
+            { time: 'Tomorrow', event: 'Core PCE Price Index', actual: '', forecast: '3.7%', previous: '3.7%', impact: 'high' }
+        ];
+
+        const news = [
+            {
+                title: 'Fed Signals Potential Rate Cuts in 2024 as Inflation Cools',
+                source: 'Reuters',
+                time: '2 hours ago',
+                summary: 'Federal Reserve officials indicated they may begin cutting interest rates next year as inflation continues to moderate toward their 2% target.'
+            },
+            {
+                title: 'Tech Stocks Rally on Strong AI Chip Demand',
+                source: 'Bloomberg',
+                time: '3 hours ago',
+                summary: 'Semiconductor stocks surged as major tech companies reported unprecedented demand for AI-focused processors.'
+            },
+            {
+                title: 'Oil Prices Drop on Higher US Inventory Levels',
+                source: 'CNBC',
+                time: '4 hours ago',
+                summary: 'Crude oil futures fell after government data showed a larger-than-expected build in US petroleum stockpiles.'
+            },
+            {
+                title: 'Bitcoin Breaks Above $43,000 Amid ETF Optimism',
+                source: 'CoinDesk',
+                time: '5 hours ago',
+                summary: 'Bitcoin rallied past $43,000 as investors anticipate approval of spot Bitcoin ETFs in the coming weeks.'
+            },
+            {
+                title: 'European Markets Close Higher on ECB Rate Decision',
+                source: 'Financial Times',
+                time: '6 hours ago',
+                summary: 'European stocks ended the session in positive territory after the ECB held rates steady as expected.'
+            }
+        ];
+
+        // Render Functions
+        function renderStockList(containerId, data) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = data.map(item => `
+                <div class="p-4 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors cursor-pointer">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center font-bold text-sm">
+                            ${item.symbol.substring(0, 1)}
+                        </div>
+                        <div>
+                            <div class="font-semibold">${item.symbol}</div>
+                            <div class="text-sm text-gray-500 dark:text-gray-400 truncate max-w-[150px]">${item.name}</div>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <div class="font-mono font-semibold tabular-nums">$${item.price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                        <div class="text-sm font-mono ${item.change >= 0 ? 'price-up' : 'price-down'}">
+                            ${item.change >= 0 ? '+' : ''}${item.change.toFixed(2)} (${item.percentChange >= 0 ? '+' : ''}${item.percentChange.toFixed(2)}%)
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderCommodities() {
+            const container = document.getElementById('commodities-list');
+            container.innerHTML = commodities.map(item => `
+                <div class="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-lg bg-warning/20 flex items-center justify-center">
+                            <i class="ri-coins-line text-warning"></i>
+                        </div>
+                        <div>
+                            <div class="font-medium text-sm">${item.name}</div>
+                            <div class="text-xs text-gray-500 dark:text-gray-400">${item.symbol}</div>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <div class="font-mono font-semibold tabular-nums">$${item.price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                        <div class="text-xs font-mono ${item.change >= 0 ? 'price-up' : 'price-down'}">
+                            ${item.change >= 0 ? '+' : ''}${item.change.toFixed(2)} (${item.percentChange >= 0 ? '+' : ''}${item.percentChange.toFixed(2)}%)
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderCrypto() {
+            const container = document.getElementById('crypto-list');
+            container.innerHTML = cryptocurrencies.map(item => `
+                <div class="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-lg bg-warning/20 flex items-center justify-center">
+                            <i class="ri-bit-coin-line text-warning"></i>
+                        </div>
+                        <div>
+                            <div class="font-medium text-sm">${item.name}</div>
+                            <div class="text-xs text-gray-500 dark:text-gray-400">${item.symbol}</div>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <div class="font-mono font-semibold tabular-nums">$${item.price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                        <div class="text-xs font-mono ${item.change >= 0 ? 'price-up' : 'price-down'}">
+                            ${item.change >= 0 ? '+' : ''}${item.change.toFixed(2)} (${item.percentChange >= 0 ? '+' : ''}${item.percentChange.toFixed(2)}%)
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderTreasuries() {
+            const container = document.getElementById('treasury-list');
+            container.innerHTML = treasuries.map(item => `
+                <div class="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center">
+                            <i class="ri-government-line text-primary"></i>
+                        </div>
+                        <div class="font-medium text-sm">${item.name} Treasury</div>
+                    </div>
+                    <div class="text-right">
+                        <div class="font-mono font-semibold tabular-nums">${item.rate.toFixed(2)}%</div>
+                        <div class="text-xs font-mono ${item.change >= 0 ? 'price-up' : 'price-down'}">
+                            ${item.change >= 0 ? '+' : ''}${item.change.toFixed(2)}%
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderEconomicCalendar() {
+            const container = document.getElementById('economic-calendar');
+            container.innerHTML = economicEvents.map(item => {
+                const impactColors = {
+                    high: 'bg-red-500',
+                    medium: 'bg-yellow-500',
+                    low: 'bg-green-500'
+                };
+                return `
+                <div class="p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-xs text-gray-500 dark:text-gray-400">${item.time}</span>
+                        <span class="w-2 h-2 rounded-full ${impactColors[item.impact]}"></span>
+                    </div>
+                    <div class="font-medium text-sm mb-1">${item.event}</div>
+                    <div class="flex gap-4 text-xs font-mono">
+                        ${item.actual ? `<span class="text-gray-500 dark:text-gray-400">Actual: <span class="text-gray-900 dark:text-gray-100 font-semibold">${item.actual}</span></span>` : ''}
+                        ${item.forecast ? `<span class="text-gray-500 dark:text-gray-400">Forecast: <span class="text-gray-900 dark:text-gray-100 font-semibold">${item.forecast}</span></span>` : ''}
+                        ${item.previous ? `<span class="text-gray-500 dark:text-gray-400">Previous: <span class="text-gray-900 dark:text-gray-100 font-semibold">${item.previous}</span></span>` : ''}
+                    </div>
+                </div>
+            `}).join('');
+        }
+
+        function renderNews() {
+            const container = document.getElementById('news-list');
+            container.innerHTML = news.map(item => `
+                <div class="p-4 news-item cursor-pointer">
+                    <div class="flex items-start justify-between gap-4">
+                        <div class="flex-1">
+                            <h3 class="font-medium mb-1 line-clamp-2">${item.title}</h3>
+                            <p class="text-sm text-gray-500 dark:text-gray-400 line-clamp-2 mb-2">${item.summary}</p>
+                            <div class="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
+                                <span class="font-medium">${item.source}</span>
+                                <span>•</span>
+                                <span>${item.time}</span>
+                            </div>
+                        </div>
+                        <i class="ri-arrow-right-line text-gray-400 self-center"></i>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Initialize all renders
+        renderStockList('gainers-list', gainers);
+        renderStockList('losers-list', losers);
+        renderStockList('active-list', mostActive);
+        renderCommodities();
+        renderCrypto();
+        renderTreasuries();
+        renderEconomicCalendar();
+        renderNews();
+
+        // Simulate real-time updates
+        function simulatePriceUpdates() {
+            // Update indices
+            const indices = ['sp500', 'dow', 'nasdaq', 'vix'];
+            indices.forEach(index => {
+                const priceEl = document.getElementById(`${index}-price`);
+                const changeEl = document.getElementById(`${index}-change`);
+                const currentPrice = parseFloat(priceEl.textContent.replace(/,/g, ''));
+                const fluctuation = (Math.random() - 0.5) * 0.1;
+                const newPrice = currentPrice + fluctuation;
+                priceEl.textContent = newPrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                
+                const currentChange = parseFloat(changeEl.textContent.replace('+', ''));
+                const newChange = currentChange + (fluctuation / currentPrice * 100);
+                changeEl.textContent = `${newChange >= 0 ? '+' : ''}${newChange.toFixed(2)}%`;
+                changeEl.className = `trend-indicator ${newChange >= 0 ? 'price-up' : 'price-down'}`;
+                changeEl.innerHTML = `<i class="ri-arrow-${newChange >= 0 ? 'up' : 'down'}-line"></i><span>${changeEl.textContent}</span>`;
+            });
+
+            // Update last updated time
+            const lastUpdateEl = document.getElementById('last-update');
+            lastUpdateEl.textContent = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        }
+
+        // Update prices every 3 seconds
+        setInterval(simulatePriceUpdates, 3000);
+
+        // Add some random animations to stock prices
+        function animateStockRow() {
+            const allRows = document.querySelectorAll('#gainers-list > div, #losers-list > div, #active-list > div');
+            if (allRows.length > 0) {
+                const randomRow = allRows[Math.floor(Math.random() * allRows.length)];
+                randomRow.style.backgroundColor = 'rgba(59, 130, 246, 0.1)';
+                setTimeout(() => {
+                    randomRow.style.backgroundColor = '';
+                }, 300);
+            }
+        }
+
+        setInterval(animateStockRow, 5000);
+    </script>
+</body>
+</html>
